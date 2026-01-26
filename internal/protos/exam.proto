@@ -1,0 +1,66 @@
+// go generate protoc internal/protos/exam.proto --go_out=. --go_opt=paths=source_relative --go-grpc_out=. --go-grpc_opt=paths=source_relative
+
+syntax = "proto3";
+
+package priority.exam;
+option go_package = "github.com/priority-infra/go_exam/internal/protos/exam";
+
+message String {
+    string Value = 1;
+}
+
+message ID {
+    int64 Value = 1;
+}
+
+message Empty {
+
+} 
+
+message Employee {
+    // Unique per employee
+    int64 ID = 1;
+    // Working department for this employee
+    int64 DepartmentID = 2;
+    // The employee's name
+    string Name = 3;
+}
+
+message Employees {
+    repeated Employee Employees = 1;
+}
+
+message Department {
+    // Unique per department
+    int64 ID = 1;
+    // The empID of this department's manager. Note: A manager can manage only one department.
+    int64 ManagerID = 2;
+    // Department name
+    string Name = 3;
+}
+
+message Departments {
+    repeated Department Departments = 1;
+}
+
+message Project {
+    // Unique per project
+    int64 ID = 1;
+    // Department responsible for this project. Note: A department is typically responsible for multiple projects.
+    int64 DepartmentID = 2;
+    // The project's name
+    string Name = 3;
+}
+
+message Projects {
+    repeated Project Projects = 1;
+}
+
+service Exam {
+    rpc GetEmployeeByID(ID) returns (Employee);
+    rpc GetEmployeeList(Empty) returns (Employees);
+    rpc GetDepartmentByID(ID) returns (Department);
+    rpc GetDepartmentList(Empty) returns (Departments);
+    rpc GetProjectByID(ID) returns (Project);
+    rpc GetProjectList(Empty) returns (Projects);
+}
