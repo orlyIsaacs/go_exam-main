@@ -14,7 +14,6 @@ import (
 
 type row struct {
 	ManagerName  string
-	ManagerID    int64
 	ProjectCount int
 	Department   string
 }
@@ -29,11 +28,11 @@ func main() {
 
 	c := exam.NewExamClient(conn)
 
-	// Timeout so the client won't hang forever
+	// 2) Set a timeout so the client won't hang forever
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	// 2) Fetch all the data we need
+	// 3) Fetch all the data we need
 	employeesResp, err := c.GetEmployeeList(ctx, &exam.Empty{})
 	if err != nil {
 		log.Fatalf("can't get employees: %v", err)
@@ -47,33 +46,36 @@ func main() {
 		log.Fatalf("can't get projects: %v", err)
 	}
 
-	employees := employeesResp.GetEmployees()
-	departments := departmentsResp.GetDepartments()
-	projects := projectsResp.GetProjects()
+	rows := buildRows(employeesResp.GetEmployees(), departmentsResp.GetDepartments(), projectsResp.GetProjects())
+	printRows(rows)
+}
 
-	// 3) Build employeeId -> employee map
+// buildRows contains the core logic of the assignment.
+// It is pure (no side effects), which makes it easy to unit test.
+func buildRows(employees []*exam.Employee, departments []*exam.Department, projects []*exam.Project) []row {
+	// employeeId -> employee
 	employeeByID := make(map[int64]*exam.Employee, len(employees))
 	for _, e := range employees {
 		employeeByID[e.GetID()] = e
 	}
 
-	// 4) Count projects per department
+	// departmentId -> number of projects
 	projectCountByDept := make(map[int64]int)
 	for _, p := range projects {
 		projectCountByDept[p.GetDepartmentID()]++
 	}
 
-	// 5) Build rows: manager + number of projects in their department
-	var rows []row
+	rows := make([]row, 0, len(departments))
 	for _, d := range departments {
 		count := projectCountByDept[d.GetID()]
 		if count <= 1 {
-			continue // only managers with > 1 project
+			continue
 		}
 
 		manager, ok := employeeByID[d.GetManagerID()]
 		if !ok {
-			continue // defensive: skip if manager missing
+			// defensive: if data is inconsistent, skip this department
+			continue
 		}
 
 		rows = append(rows, row{
@@ -83,7 +85,7 @@ func main() {
 		})
 	}
 
-	// 6) Sort by project count descending, tie-break by manager name
+	// Sort by project count descending (tie-break by name)
 	sort.Slice(rows, func(i, j int) bool {
 		if rows[i].ProjectCount == rows[j].ProjectCount {
 			return rows[i].ManagerName < rows[j].ManagerName
@@ -91,7 +93,10 @@ func main() {
 		return rows[i].ProjectCount > rows[j].ProjectCount
 	})
 
-	// 7) Print
+	return rows
+}
+
+func printRows(rows []row) {
 	if len(rows) == 0 {
 		fmt.Println("No managers found with more than 1 project.")
 		return

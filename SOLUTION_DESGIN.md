@@ -1,21 +1,30 @@
-# Architecture
 
 ## Overview
-The client retrieves employees, departments, and projects from the gRPC server.
-It calculates how many projects each department is responsible for and associates each department with its manager.
+The client gets employees, departments, and projects from the gRPC server.
+It counts how many projects each department has and connects each department to its manager.
+
+Only managers with more than one project are printed.
 
 ## Approach
-All required data is fetched using existing gRPC list endpoints.
-Maps are used to join employees, departments, and projects efficiently, avoiding nested loops.
+All the data is fetched from the server using the existing gRPC endpoints.
+Maps are used to connect employees, departments, and projects and to avoid nested loops.
 
-Only managers responsible for more than one project are included in the output.
-The final result is sorted by project count in descending order.
+The main calculation is done in a separate function (`buildRows`), which makes the code easier to read and test.
+The results are sorted by project count in descending order.
 
 ## Efficiency
-Each dataset (employees, departments, projects) is processed once, resulting in linear time complexity.
-Map lookups are constant time and keep the aggregation fast and scalable.
+Each list is processed once.
+Map lookups are fast and keep the logic simple and scalable.
 
-Sorting is performed only on the final list of managers, which is small compared to the total data size, so its impact is minimal.
+Sorting is done only on the final list of managers, which is small, so it does not have a big impact.
+
+## Testing
+Unit tests were added for the main calculation logic using Ginkgo and Gomega.
+The tests check filtering, sorting, and edge cases without depending on the gRPC server.
+
+Tests can be run from the project root using:
+`go test ./...`
 
 ## Future Improvements
-If I had more time, I would add unit tests for the aggregation logic and improve the output formatting.
+If I had more time, I would add tests for the output formatting.
+For larger systems, I would also consider moving the aggregation logic to the server side.
