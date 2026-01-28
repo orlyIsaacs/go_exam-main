@@ -51,40 +51,39 @@ func main() {
 	departments := departmentsResp.GetDepartments()
 	projects := projectsResp.GetProjects()
 
-	// 3) Build lookup: employeeId -> employee
-	empByID := make(map[int64]*exam.Employee, len(employees))
+	// 3) Build employeeId -> employee map
+	employeeByID := make(map[int64]*exam.Employee, len(employees))
 	for _, e := range employees {
-		empByID[e.GetID()] = e
+		employeeByID[e.GetID()] = e
 	}
 
 	// 4) Count projects per department
-	projectsByDept := make(map[int64]int)
+	projectCountByDept := make(map[int64]int)
 	for _, p := range projects {
-		projectsByDept[p.GetDepartmentID()]++
+		projectCountByDept[p.GetDepartmentID()]++
 	}
 
 	// 5) Build rows: manager + number of projects in their department
 	var rows []row
 	for _, d := range departments {
-		count := projectsByDept[d.GetID()]
+		count := projectCountByDept[d.GetID()]
 		if count <= 1 {
 			continue // only managers with > 1 project
 		}
 
-		mgr, ok := empByID[d.GetManagerID()]
+		manager, ok := employeeByID[d.GetManagerID()]
 		if !ok {
 			continue // defensive: skip if manager missing
 		}
 
 		rows = append(rows, row{
-			ManagerName:  mgr.GetName(),
-			ManagerID:    mgr.GetID(),
+			ManagerName:  manager.GetName(),
 			ProjectCount: count,
 			Department:   d.GetName(),
 		})
 	}
 
-	// 6) Sort by project count descending (tie-break by name)
+	// 6) Sort by project count descending, tie-break by manager name
 	sort.Slice(rows, func(i, j int) bool {
 		if rows[i].ProjectCount == rows[j].ProjectCount {
 			return rows[i].ManagerName < rows[j].ManagerName
