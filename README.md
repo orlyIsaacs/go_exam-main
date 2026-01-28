@@ -29,3 +29,7 @@ Your mission is to write a program that accomplishes the following:
 - Sort the list by the number of projects in descending order.
 
 If you have any questions or need assistance, please don't hesitate to reach out.
+
+## Orly's solution 
+The client retrieves employees, departments, and projects from the gRPC server, counts the number of projects per department, and maps each department to its manager.
+Managers responsible for more than one project are filtered and sorted in descending order by project count before being printed.
